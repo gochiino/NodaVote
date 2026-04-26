@@ -327,7 +327,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, runTransaction, get, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -370,20 +370,8 @@ async function init() {
     try { await signInAnonymously(auth); } catch(e) {}
     return;
   }
-  try {
-    await signInAnonymously(auth);
-    const uid = auth.currentUser.uid;
-    const snapshot = await get(ref(db, `votes/q${qNum}/${uid}`));
-    hideLoading();
-    if (snapshot.exists()) {
-      showVotedState(snapshot.val().choice);
-    } else {
-      showVoteForm();
-    }
-  } catch (e) {
-    hideLoading();
-    showError('接続エラーが発生しました。ページを再読み込みしてください。');
-  }
+  hideLoading();
+  showError('このページは存在しません。');
 }
 
 window.castFreeVote = async function(choice) {
@@ -392,11 +380,7 @@ window.castFreeVote = async function(choice) {
   try {
     const now = new Date().toISOString();
     await runTransaction(ref(db, `freemode/${choice}/count`), (c) => (c || 0) + 1);
-    const logRef = ref(db, `freemode/${choice}/logs`);
-    const snap = await get(logRef);
-    const logs = snap.val() || [];
-    const newLogs = Array.isArray(logs) ? [...logs, now] : [now];
-    await set(logRef, newLogs);
+    await push(ref(db, `freemode/${choice}/logs`), now);
   } catch(e) {
   }
 };
@@ -477,26 +461,36 @@ function showFreeModeForm() {
 
 
 
+let toastTimer1 = null, toastTimer2 = null, toastQueue = 0;
+
 function showSendingToast(choice) {
   const toast = document.getElementById('send-toast');
   const toastText = document.getElementById('toast-text');
   const spinner = document.getElementById('toast-spinner');
   if (!toast) return;
 
+  // 連打されたらタイマーをリセットして新しいサイクルを開始
+  clearTimeout(toastTimer1);
+  clearTimeout(toastTimer2);
+
   toastText.textContent = '送信中...';
+  toastText.style.color = '#b06080';
   spinner.style.display = 'block';
+  toast.style.transition = 'none';
   toast.style.opacity = '1';
 
-  setTimeout(() => {
+  toastTimer1 = setTimeout(() => {
     spinner.style.display = 'none';
     toastText.textContent = '✓ 投票を送信しました！';
     toastText.style.color = '#ff6b9d';
+    toast.style.transition = 'opacity 0.4s';
   }, 800);
 
-  setTimeout(() => {
+  toastTimer2 = setTimeout(() => {
+    toast.style.transition = 'opacity 0.4s';
     toast.style.opacity = '0';
-    toastText.style.color = '#b06080';
-  }, 2200);
+    setTimeout(() => { toastText.style.color = '#b06080'; }, 400);
+  }, 2400);
 }
 
 function showVoteForm() {
