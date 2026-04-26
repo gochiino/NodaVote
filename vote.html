@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>投票</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fff0f5;
+    --pink: #ff6b9d;
+    --pink-dark: #e0457a;
+    --pink-light: #ffb3ce;
+    --purple: #c084fc;
+    --text: #5a1a3a;
+    --text-muted: #b06080;
+    --white: #ffffff;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Maru Gothic', sans-serif;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: 20px;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(circle at 20% 20%, rgba(255,107,157,0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(192,132,252,0.12) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hearts-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .heart-deco {
+    position: absolute;
+    opacity: 0.12;
+    animation: floatHeart linear infinite;
+    color: var(--pink);
+  }
+
+  @keyframes floatHeart {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.12; }
+    90% { opacity: 0.12; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logo-wrap {
+    width: 100%;
+    max-width: 260px;
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: popIn 0.6s 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .logo-wrap img {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 4px 16px rgba(255,107,157,0.5));
+  }
+
+  .question-card {
+    width: 100%;
+    background: var(--white);
+    border-radius: 24px;
+    padding: 24px 20px;
+    box-shadow: 0 4px 24px rgba(255,107,157,0.2);
+    border: 2px solid rgba(255,107,157,0.15);
+    margin-bottom: 14px;
+    opacity: 0;
+    animation: popIn 0.6s 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .question-text {
+    font-size: clamp(16px, 5vw, 21px);
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    opacity: 0;
+    animation: popIn 0.6s 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .vote-btn {
+    position: relative;
+    width: 100%;
+    padding: 20px 24px;
+    border: none;
+    border-radius: 18px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: clamp(15px, 4.5vw, 18px);
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    color: var(--white);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .vote-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.5s ease;
+  }
+
+  .vote-btn:hover::after { left: 150%; }
+  .vote-btn:active { transform: scale(0.97) !important; }
+  .vote-btn:hover { transform: translateY(-3px); }
+
+  .vote-btn.option-a {
+    background: linear-gradient(135deg, #ff6b9d, #ff4081);
+    box-shadow: 0 8px 28px rgba(255,107,157,0.45);
+  }
+
+  .vote-btn.option-b {
+    background: linear-gradient(135deg, #c084fc, #9333ea);
+    box-shadow: 0 8px 28px rgba(192,132,252,0.45);
+  }
+
+  .vote-btn:hover.option-a { box-shadow: 0 12px 40px rgba(255,107,157,0.6); }
+  .vote-btn:hover.option-b { box-shadow: 0 12px 40px rgba(192,132,252,0.6); }
+  .vote-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+  .btn-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-heart { font-size: 20px; line-height: 1; }
+  .btn-text { flex: 1; text-align: center; }
+
+  .voted-overlay {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .voted-overlay.show {
+    display: flex;
+    opacity: 0;
+    animation: popIn 0.5s ease forwards;
+  }
+
+  .voted-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 36px 28px;
+    box-shadow: 0 4px 24px rgba(255,107,157,0.2);
+    border: 2px solid rgba(255,107,157,0.2);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .voted-heart {
+    font-size: 48px;
+    animation: heartBeat 1s ease infinite;
+  }
+
+  @keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  .voted-title {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--pink);
+  }
+
+  .voted-choice {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  .voted-choice strong { color: var(--text); font-weight: 700; }
+
+  .error-msg {
+    display: none;
+    color: #e53e6e;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 10px;
+    padding: 10px 16px;
+    background: rgba(255,107,157,0.1);
+    border: 1px solid rgba(255,107,157,0.3);
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  .error-msg.show { display: block; }
+
+  .loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .loading.show { display: flex; }
+
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--pink-light);
+    border-top-color: var(--pink);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .loading-text { font-size: 14px; color: var(--text-muted); font-weight: 700; }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .burst { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+</style>
+</head>
+<body>
+
+<div class="hearts-bg" id="hearts-bg"></div>
+<canvas class="burst" id="burst"></canvas>
+
+<div class="container">
+
+  <div class="loading show" id="loading-state">
+    <div class="spinner"></div>
+    <div class="loading-text">読み込み中♪</div>
+  </div>
+
+  <div id="vote-form" style="display:none; width:100%; flex-direction:column; align-items:center; gap:0;">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="野田が脱いだらゲームオーバー">
+    </div>
+    <div class="question-card">
+      <div class="question-text" id="q-text"></div>
+    </div>
+    <div class="buttons">
+      <button class="vote-btn option-a" id="btn-a" onclick="castVote('A')">
+        <div class="btn-inner">
+          <span class="btn-heart">💗</span>
+          <span class="btn-text" id="opt-a-text"></span>
+        </div>
+      </button>
+      <button class="vote-btn option-b" id="btn-b" onclick="castVote('B')">
+        <div class="btn-inner">
+          <span class="btn-heart">💜</span>
+          <span class="btn-text" id="opt-b-text"></span>
+        </div>
+      </button>
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <div class="voted-overlay" id="voted-state">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="野田が脱いだらゲームオーバー">
+    </div>
+    <div class="voted-card">
+      <div class="voted-heart">💖</div>
+      <div class="voted-title">投票完了！</div>
+      <div class="voted-choice" id="voted-choice-text">あなたの選択：<strong></strong></div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBsHXB36qQckF_m0EpYDyLTmC2o_ALMKi8",
+  authDomain: "nodavote.firebaseapp.com",
+  databaseURL: "https://nodavote-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nodavote",
+  storageBucket: "nodavote.firebasestorage.app",
+  messagingSenderId: "918804873703",
+  appId: "1:918804873703:web:3fb0074697c58d9c2c7d42"
+};
+
+const QUESTIONS = {};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const params = new URLSearchParams(location.search);
+const qNum = parseInt(params.get('q') || '1');
+const qData = QUESTIONS[qNum];
+
+const isFreeMode = qNum === 0;
+
+const heartsContainer = document.getElementById('hearts-bg');
+for (let i = 0; i < 10; i++) {
+  const h = document.createElement('span');
+  h.className = 'heart-deco';
+  h.textContent = ['♥','♡','❤','♥','♡'][i % 5];
+  h.style.left = Math.random() * 100 + '%';
+  h.style.animationDuration = (8 + Math.random() * 12) + 's';
+  h.style.animationDelay = (Math.random() * 10) + 's';
+  h.style.fontSize = (14 + Math.random() * 14) + 'px';
+  heartsContainer.appendChild(h);
+}
+
+async function init() {
+  if (isFreeMode) {
+    hideLoading();
+    showFreeModeForm();
+    try { await signInAnonymously(auth); } catch(e) {}
+    return;
+  }
+  try {
+    await signInAnonymously(auth);
+    const uid = auth.currentUser.uid;
+    const snapshot = await get(ref(db, `votes/q${qNum}/${uid}`));
+    hideLoading();
+    if (snapshot.exists()) {
+      showVotedState(snapshot.val().choice);
+    } else {
+      showVoteForm();
+    }
+  } catch (e) {
+    hideLoading();
+    showError('接続エラーが発生しました。ページを再読み込みしてください。');
+  }
+}
+
+window.castFreeVote = async function(choice) {
+  triggerBurst(choice);
+  showSendingToast(choice);
+  try {
+    const now = new Date().toISOString();
+    await runTransaction(ref(db, `freemode/${choice}/count`), (c) => (c || 0) + 1);
+    const logRef = ref(db, `freemode/${choice}/logs`);
+    const snap = await get(logRef);
+    const logs = snap.val() || [];
+    const newLogs = Array.isArray(logs) ? [...logs, now] : [now];
+    await set(logRef, newLogs);
+  } catch(e) {
+  }
+};
+
+window.castVote = async function(choice) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
+  try {
+    const voteKey = `votes/q${qNum}/${uid}`;
+    const userSnap = await get(ref(db, voteKey));
+    if (userSnap.exists()) { showVotedState(userSnap.val().choice); return; }
+    await set(ref(db, voteKey), { choice, votedAt: new Date().toISOString(), qNum });
+    await runTransaction(ref(db, `counts/q${qNum}/${choice}`), (c) => (c || 0) + 1);
+    triggerBurst(choice);
+    setTimeout(() => showVotedState(choice), 500);
+  } catch (e) {
+    document.querySelectorAll('.vote-btn').forEach(b => b.disabled = false);
+    showError('投票に失敗しました。もう一度お試しください。');
+  }
+};
+
+function hideLoading() { document.getElementById('loading-state').style.display = 'none'; }
+
+function showFreeModeForm() {
+  const container = document.querySelector('.container');
+  container.innerHTML = `
+    <div class="logo-wrap" style="opacity:0;animation:popIn 0.6s 0.1s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
+      <img src="logo.png" alt="野田が脱いだらゲームオーバー">
+    </div>
+    <div style="
+      opacity:0;
+      animation:popIn 0.6s 0.2s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+      font-size:14px;
+      font-weight:700;
+      color:#b06080;
+      text-align:center;
+      line-height:1.6;
+      width:100%;
+      margin-bottom:14px;
+    ">投票タイム中にボタンを押してください</div>
+    <div class="buttons" style="opacity:0;animation:popIn 0.6s 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
+      <button class="vote-btn option-a" id="free-btn-a" onclick="castFreeVote('A')" style="padding:36px 24px;font-size:clamp(30px,10vw,48px);letter-spacing:0.15em;justify-content:center;">
+        A
+      </button>
+      <button class="vote-btn option-b" id="free-btn-b" onclick="castFreeVote('B')" style="padding:36px 24px;font-size:clamp(30px,10vw,48px);letter-spacing:0.15em;justify-content:center;">
+        B
+      </button>
+    </div>
+    <div id="send-toast" style="
+      margin-top:18px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:white;
+      border-radius:100px;
+      padding:10px 20px;
+      box-shadow:0 4px 16px rgba(255,107,157,0.2);
+      border:1.5px solid rgba(255,107,157,0.2);
+      opacity:0;
+      transition:opacity 0.2s;
+      font-size:14px;
+      font-weight:700;
+      color:#b06080;
+    ">
+      <span id="toast-spinner" style="
+        width:16px;height:16px;
+        border:2px solid #ffb3ce;
+        border-top-color:#ff6b9d;
+        border-radius:50%;
+        animation:spin 0.6s linear infinite;
+        flex-shrink:0;
+      "></span>
+      <span id="toast-text">送信中...</span>
+    </div>
+  `;
+}
+
+
+
+function showSendingToast(choice) {
+  const toast = document.getElementById('send-toast');
+  const toastText = document.getElementById('toast-text');
+  const spinner = document.getElementById('toast-spinner');
+  if (!toast) return;
+
+  toastText.textContent = '送信中...';
+  spinner.style.display = 'block';
+  toast.style.opacity = '1';
+
+  setTimeout(() => {
+    spinner.style.display = 'none';
+    toastText.textContent = '✓ 投票を送信しました！';
+    toastText.style.color = '#ff6b9d';
+  }, 800);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toastText.style.color = '#b06080';
+  }, 2200);
+}
+
+function showVoteForm() {
+  if (!qData) { showError('この質問は存在しません。'); return; }
+  document.getElementById('q-text').textContent = qData.question;
+  document.getElementById('opt-a-text').textContent = qData.optionA;
+  document.getElementById('opt-b-text').textContent = qData.optionB;
+  const form = document.getElementById('vote-form');
+  form.style.display = 'flex';
+}
+
+function showVotedState(choice) {
+  document.getElementById('vote-form').style.display = 'none';
+  document.getElementById('voted-state').classList.add('show');
+  const optText = choice === 'A' ? qData?.optionA : qData?.optionB;
+  document.getElementById('voted-choice-text').innerHTML = `あなたの選択：<strong>${optText || choice}</strong>`;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function triggerBurst(choice) {
+  const canvas = document.getElementById('burst');
+  const ctx = canvas.getContext('2d');
+  canvas.width = innerWidth; canvas.height = innerHeight;
+  const emojisA = ['💗','💖','✨','💕','⭐','💓'];
+  const emojisB = ['💜','💫','✨','🌟','💜','⭐'];
+  const emojis = choice === 'A' ? emojisA : emojisB;
+  const originY = choice === 'A' ? innerHeight * 0.45 : innerHeight * 0.65;
+  const particles = Array.from({length: 28}, () => ({
+    x: innerWidth / 2, y: originY,
+    vx: (Math.random() - 0.5) * 16,
+    vy: (Math.random() - 0.5) * 14 - 3,
+    emoji: emojis[Math.floor(Math.random() * emojis.length)],
+    size: 16 + Math.random() * 14,
+    alpha: 1
+  }));
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.35; p.alpha -= 0.022;
+      if (p.alpha > 0) {
+        alive = true;
+        ctx.globalAlpha = p.alpha;
+        ctx.font = p.size + 'px serif';
+        ctx.fillText(p.emoji, p.x, p.y);
+      }
+    });
+    ctx.globalAlpha = 1;
+    if (alive) requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+init();
+</script>
+</body>
+</html>

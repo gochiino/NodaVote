@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>集計結果</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fff0f5;
+    --pink: #ff6b9d;
+    --purple: #c084fc;
+    --text: #5a1a3a;
+    --text-muted: #b06080;
+    --white: #ffffff;
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Maru Gothic', sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: 40px 24px;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 40px 32px;
+    box-shadow: 0 4px 32px rgba(255,107,157,0.2);
+    border: 2px solid rgba(255,107,157,0.15);
+    width: 100%;
+    max-width: 480px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.1em;
+    color: var(--pink);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 36px;
+    letter-spacing: 0.08em;
+  }
+
+  .total {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 28px;
+  }
+
+  .total span {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--text);
+    margin: 0 4px;
+  }
+
+  .result-row {
+    margin-bottom: 20px;
+  }
+
+  .result-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+
+  .result-label {
+    font-size: 18px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .result-count {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .result-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  .bar-track {
+    height: 14px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0;
+  }
+
+  .bar-fill.a { background: linear-gradient(90deg, #ff6b9d, #ff4081); }
+  .bar-fill.b { background: linear-gradient(90deg, #c084fc, #9333ea); }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,107,157,0.12);
+    margin: 24px 0;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-refresh {
+    background: linear-gradient(135deg, #ff6b9d, #ff4081);
+    color: white;
+    box-shadow: 0 4px 16px rgba(255,107,157,0.3);
+  }
+
+  .btn-reset {
+    background: rgba(0,0,0,0.05);
+    color: var(--text-muted);
+  }
+
+  .status {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 16px;
+    letter-spacing: 0.08em;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--pink);
+    margin-right: 4px;
+    animation: pulse 2s ease infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .loading-text {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 20px 0;
+  }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(255,107,157,0.2);
+    border-top-color: var(--pink);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>VOTE RESULTS</h1>
+  <div class="subtitle">野田が脱いだらゲームオーバー</div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">読み込み中...</div>
+  </div>
+
+  <div id="results" style="display:none;">
+    <div class="total">総投票数 <span id="total-count">0</span> 票</div>
+
+    <div class="result-row">
+      <div class="result-meta">
+        <div class="result-label" style="color:#ff6b9d;">💗 A</div>
+        <div style="display:flex;align-items:baseline;gap:12px;">
+          <div class="result-count" id="count-a">0 票</div>
+          <div class="result-pct" style="color:#ff6b9d;" id="pct-a">0%</div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-fill a" id="bar-a"></div></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="result-row">
+      <div class="result-meta">
+        <div class="result-label" style="color:#c084fc;">💜 B</div>
+        <div style="display:flex;align-items:baseline;gap:12px;">
+          <div class="result-count" id="count-b">0 票</div>
+          <div class="result-pct" style="color:#c084fc;" id="pct-b">0%</div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-fill b" id="bar-b"></div></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-refresh" onclick="loadResults()">↺ 更新</button>
+    <button class="btn btn-reset" onclick="confirmReset()">リセット</button>
+  </div>
+
+  <div class="status"><span class="dot"></span><span id="status-text">読み込み中...</span></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBsHXB36qQckF_m0EpYDyLTmC2o_ALMKi8",
+  authDomain: "nodavote.firebaseapp.com",
+  databaseURL: "https://nodavote-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nodavote",
+  storageBucket: "nodavote.firebasestorage.app",
+  messagingSenderId: "918804873703",
+  appId: "1:918804873703:web:3fb0074697c58d9c2c7d42"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+await signInAnonymously(auth);
+
+window.loadResults = async function() {
+  document.getElementById('status-text').textContent = '更新中...';
+  try {
+    const snap = await get(ref(db, 'freemode'));
+    const data = snap.val() || {};
+    const countA = data.A?.count || 0;
+    const countB = data.B?.count || 0;
+    const total = countA + countB;
+    const pctA = total ? Math.round(countA / total * 100) : 0;
+    const pctB = total ? 100 - pctA : 0;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+
+    document.getElementById('total-count').textContent = total.toLocaleString();
+    document.getElementById('count-a').textContent = countA.toLocaleString() + ' 票';
+    document.getElementById('count-b').textContent = countB.toLocaleString() + ' 票';
+    document.getElementById('pct-a').textContent = pctA + '%';
+    document.getElementById('pct-b').textContent = pctB + '%';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById('bar-a').style.width = pctA + '%';
+        document.getElementById('bar-b').style.width = pctB + '%';
+      });
+    });
+
+    const now = new Date().toLocaleTimeString('ja-JP');
+    document.getElementById('status-text').textContent = '最終更新：' + now;
+  } catch(e) {
+    document.getElementById('status-text').textContent = '読み込みエラー';
+  }
+};
+
+window.confirmReset = function() {
+  if (confirm('集計データをリセットしますか？')) {
+    remove(ref(db, 'freemode')).then(() => {
+      loadResults();
+    });
+  }
+};
+
+loadResults();
+setInterval(loadResults, 30000);
+</script>
+</body>
+</html>
