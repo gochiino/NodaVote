@@ -206,6 +206,28 @@
 </head>
 <body>
 
+<div id="pw-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:24px;">
+  <div style="background:white;border-radius:24px;padding:36px 28px;box-shadow:0 4px 32px rgba(255,107,157,0.2);border:2px solid rgba(255,107,157,0.15);width:100%;max-width:360px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🔒</div>
+    <div style="font-weight:900;font-size:18px;color:#5a1a3a;margin-bottom:24px;">パスワードを入力</div>
+    <input id="pw-input" type="password" placeholder="password" style="width:100%;padding:14px 16px;border:2px solid rgba(255,107,157,0.3);border-radius:12px;font-family:'Zen Maru Gothic',sans-serif;font-size:16px;color:#5a1a3a;outline:none;margin-bottom:12px;box-sizing:border-box;" onkeydown="if(event.key==='Enter')checkPassword()">
+    <div id="pw-error" style="color:#ff4081;font-size:12px;margin-bottom:12px;display:none;">パスワードが違います</div>
+    <button onclick="checkPassword()" style="width:100%;padding:14px;background:linear-gradient(135deg,#ff6b9d,#ff4081);color:white;border:none;border-radius:12px;font-family:'Zen Maru Gothic',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">入力</button>
+  </div>
+</div>
+
+<script>
+function checkPassword() {
+  const input = document.getElementById('pw-input').value;
+  if (input === 'noda_hadaka') {
+    document.getElementById('pw-screen').style.display = 'none';
+  } else {
+    document.getElementById('pw-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+  }
+}
+</script>
+
 <div class="card">
   <h1>VOTE RESULTS</h1>
   <div class="subtitle">野田が脱いだらゲームオーバー</div>
